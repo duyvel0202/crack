@@ -43,8 +43,7 @@ object DiscordRPC {
                             startHeartbeat()
                             sendIdentify()
                         }
-                        11 -> {
-                        }
+                        11 -> {}
                         0 -> {
                             val t = json.optString("t")
                             if (t == "READY") connected = true
@@ -58,8 +57,7 @@ object DiscordRPC {
                             webSocket.close(1000, "reconnect")
                         }
                     }
-                } catch (e: Exception) {
-                }
+                } catch (e: Exception) {}
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -135,7 +133,6 @@ object DiscordRPC {
                         put("large_text", details)
                     })
                 }
-                put("application_id", appName)
             }
             val payload = JSONObject().apply {
                 put("op", 3)
@@ -147,8 +144,7 @@ object DiscordRPC {
                 })
             }
             ws?.send(payload.toString())
-        } catch (e: Exception) {
-        }
+        } catch (e: Exception) {}
     }
 
     fun isConnected(): Boolean = connected
@@ -156,8 +152,7 @@ object DiscordRPC {
     fun disconnect() {
         try {
             ws?.close(1000, "user disconnect")
-        } catch (e: Exception) {
-        }
+        } catch (e: Exception) {}
         ws = null
         connected = false
     }
