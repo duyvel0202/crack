@@ -1,0 +1,3 @@
+-keep class com.s2an.rpc.** { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
