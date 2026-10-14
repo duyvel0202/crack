@@ -2,6 +2,8 @@ package com.s2an.rpc
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
@@ -10,17 +12,29 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var tokenInput: EditText
+    private lateinit var appIdInput: EditText
+    private lateinit var connectBtn: Button
+    private lateinit var disconnectBtn: Button
+    private lateinit var notifBtn: Button
+    private lateinit var usageBtn: Button
+    private lateinit var statusText: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tokenInput = findViewById<EditText>(R.id.tokenInput)
-        val appIdInput = findViewById<EditText>(R.id.appIdInput)
-        val connectBtn = findViewById<Button>(R.id.connectBtn)
-        val disconnectBtn = findViewById<Button>(R.id.disconnectBtn)
-        val notifBtn = findViewById<Button>(R.id.notifBtn)
-        val usageBtn = findViewById<Button>(R.id.usageBtn)
-        val statusText = findViewById<TextView>(R.id.statusText)
+        tokenInput = findViewById(R.id.tokenInput)
+        appIdInput = findViewById(R.id.appIdInput)
+        connectBtn = findViewById(R.id.connectBtn)
+        disconnectBtn = findViewById(R.id.disconnectBtn)
+        notifBtn = findViewById(R.id.notifBtn)
+        usageBtn = findViewById(R.id.usageBtn)
+        statusText = findViewById(R.id.statusText)
+
+        val prefs = getSharedPreferences("rpc_prefs", MODE_PRIVATE)
+        tokenInput.setText(prefs.getString("token", ""))
+        appIdInput.setText(prefs.getString("appId", ""))
 
         notifBtn.setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -32,12 +46,30 @@ class MainActivity : AppCompatActivity() {
 
         connectBtn.setOnClickListener {
             val token = tokenInput.text.toString().trim()
-            if (token.isNotEmpty()) {
-                DiscordRPC.connect(token)
-                statusText.text = "Đang kết nối..."
-                connectBtn.isEnabled = false
-                disconnectBtn.isEnabled = true
+            val appId = appIdInput.text.toString().trim()
+
+            if (token.isEmpty()) {
+                statusText.text = "Vui lòng nhập token"
+                return@setOnClickListener
             }
+
+            prefs.edit().putString("token", token).putString("appId", appId).apply()
+
+            statusText.text = "Đang kết nối..."
+            connectBtn.isEnabled = false
+            disconnectBtn.isEnabled = true
+
+            DiscordRPC.connect(token)
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (DiscordRPC.isConnected()) {
+                    statusText.text = "Đã kết nối thành công"
+                } else {
+                    statusText.text = "Kết nối thất bại - kiểm tra token"
+                    connectBtn.isEnabled = true
+                    disconnectBtn.isEnabled = false
+                }
+            }, 5000)
         }
 
         disconnectBtn.setOnClickListener {
@@ -48,5 +80,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         disconnectBtn.isEnabled = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        DiscordRPC.disconnect()
     }
 }
